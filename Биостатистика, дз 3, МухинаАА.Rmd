@@ -1,0 +1,144 @@
+---
+title: "Биостатистика, дз 3"
+author: "Мухина А.А."
+date: "2024-03-28"
+output: html_document
+---
+
+Вначале загрузим библиотеки
+```{r message=FALSE, warning=FALSE}
+library(readxl)
+library(tidyverse)
+library(dplyr)
+```
+
+Теперь загрузим данные
+```{r}
+setwd('C:/Users/79169/Desktop/IDE')
+
+pima <- read_excel("pima.xlsx")
+
+head(pima)
+```
+
+
+Задание 1
+
+Рассчитайте описательные статистики для переменных glucose, pressure, mass.
+
+Все 3 переменные являются количесивенными, соответственно, для них нужно рассчитать число наблюдений, среднее, стандартное отклонение, 1-й и 3-й квартили, минимум и максимум.
+
+```{r}
+pima %>%
+  summarise(
+    glucose_obs = n(),
+    glucose_mean = mean(glucose, na.rm = TRUE),
+    glucose_sd = sd(glucose, na.rm = TRUE),
+    glucose_quantile_1 = quantile(glucose, 0.25, na.rm = TRUE),
+    glucose_quantile_3 = quantile(glucose, 0.75, na.rm = TRUE),
+    glucose_min = min(glucose, na.rm = TRUE),
+    glucose_max = max(glucose, na.rm = TRUE)
+  )
+```
+```{r}
+pima %>%
+  summarise(
+    pressure_obs = n(),
+    pressure_mean = mean(pressure, na.rm = TRUE),
+    pressure_sd = sd(pressure, na.rm = TRUE),
+    pressure_quantile_1 = quantile(pressure, 0.25, na.rm = TRUE),
+    pressure_quantile_3 = quantile(pressure, 0.75, na.rm = TRUE),
+    pressure_min = min(pressure, na.rm = TRUE),
+    pressure_max = max(pressure, na.rm = TRUE)
+  )
+```
+```{r}
+pima %>%
+  summarise(
+    mass_obs = n(),
+    mass_mean = mean(mass, na.rm = TRUE),
+    mass_sd = sd(mass, na.rm = TRUE),
+    mass_quantile_1 = quantile(mass, 0.25, na.rm = TRUE),
+    mass_quantile_3 = quantile(mass, 0.75, na.rm = TRUE),
+    mass_min = min(mass, na.rm = TRUE),
+    mass_max = max(mass, na.rm = TRUE)
+  )
+```
+
+Задание 2
+
+Рассчитайте описательную статистику для переменной diabetes. Создайте на основе переменной age новую переменную age_group, которая будет отражать следующие возрастные группы: 21–35, 36–49 и 50+. Посчитайте описательную статистику для новой переменной.
+
+Так как это качественная переменная, то нужно рассчитать абсолютную и относительные частоты.
+
+```{r}
+(abs_frequencies <- table(pima$diabetes))
+```
+
+```{r}
+(rel_frequencies <- prop.table(table(pima$diabetes)))
+```
+Теперь создадим новую переменную age_group
+
+```{r}
+pima <- pima %>%
+  mutate(age_group = ifelse(age <= 35, "21-35",
+  ifelse(age <= 49, "36-49", "50+")))
+
+pima <- mutate(pima, age_group = as.factor(age_group))
+
+head(pima)
+```
+
+А теперь посчитаем описательные статистики для новой переменной
+
+```{r}
+(abs_age <- table(pima$age_group))
+```
+```{r}
+(rel_age <- prop.table(table(pima$age_group)))
+```
+
+Задание 3
+
+Определите 90% доверительный интервал для переменной pedigree.
+
+```{r}
+(confidence_interval <- t.test(pima$pedigree, conf.level = 0.90)$conf.int)
+```
+
+Задание 4
+
+Постройте график плотности вероятности для переменной glucose и отметьте на нем среднее значение. Для той же переменной постройте гистограмму. Постройте два ящика с усами для значений pos и neg соответственно переменной diabetes.
+
+```{r}
+ggplot(data = pima, aes(x = glucose)) +
+  geom_density(fill = "green", alpha = 0.5) + 
+  geom_vline(aes(xintercept = mean(glucose)), color = "purple", linetype = "dashed") +
+  labs(title = "Плотность вероятности для переменной Glucose", x = "Glucose")
+```
+```{r}
+ggplot(data = pima, aes(x = glucose)) +
+  geom_histogram(fill = "green", alpha = 0.5) + 
+  geom_vline(aes(xintercept = mean(glucose)), color = "purple", linetype = "dashed") +
+  labs(title = "Гистограмма для переменной Glucose", x = "Glucose")
+```
+
+```{r}
+ggplot(data = pima, aes(x = diabetes, y = glucose, fill = diabetes)) +
+  geom_boxplot() +
+  labs(title = "Ящики с усами для переменной Glucose по Diabetes", x = "Diabetes", y = "Glucose")
+```
+
+Задание 5
+
+Постройте на одном графике две диаграммы рассеяния для наличия или отсутствия диабета. По оси X представьте значения обхвата трицепса, а по оси Y — массу тела. Выполните окрашивание, заливку и группирование по переменной diabetes. 
+
+```{r}
+ggplot(data = pima, aes(x = triceps, y = mass, color = diabetes, fill = diabetes, shape = diabetes)) +
+  geom_point() +
+  facet_grid(.~diabetes) +
+  scale_color_manual(values = c("neg" = "blue", "pos" = "red")) +  
+  labs(title = "Диаграмма рассеяния для наличия или отсутствия диабета",
+       x = "Обхват трицепса", y = "Масса тела")
+```
